@@ -128,7 +128,7 @@ try
 
     # Initialize the screen properties
     $screen        = @{};
-    $screen.Height = 15;
+    $screen.Height = 16;
     $screen.Width  = 25;
     $screen.Score  = 0;
     $screen.Sleep  = $sleep; # milliseconds between loops
@@ -180,18 +180,18 @@ try
     # Pause briefly before starting the game
     Clear-Host;
     Write-HOst -Object "`nCANNON BALL ARCADE";
-    Write-HOst -Object "`nControl Keys:";
+    Write-HOst -Object "`nControl Keys:`n";
     Write-HOst -Object " Q            Quit";
     Write-HOst -Object " P            Pause";
     Write-HOst -Object " Left Arrow   Move Left";
     Write-HOst -Object " Right Arrow  Move Right";
     Write-HOst -Object " Down Arrow   Stop";
     Write-HOst -Object " Space Bar    Launch Ball";
-    Write-Host -Object "`n Press ANY Key to Begin";
+    Write-Host -Object "`nPress ANY Key to Begin";
 
     # Loop while the game is running
-    $running  = $true;
     $keypress = $pause;
+    $running  = $true;
     while ($running)
     {
 
@@ -263,23 +263,6 @@ try
         # Move the ball upward
         $ball.Y--;
         $screen.Data[$ball.Y][$ball.X] = $ball.Icon;
-        if ($ball.Y -eq 0) { $ball.Visible = $false; }
-
-        # Check for a hit on any target within a minimum distance
-        for ($i = 0; $i -lt $count; $i++)
-        {
-          if (-not $targets[$i].Hit)
-          {
-            $diffX = [Math]::Abs($ball.X - $targets[$i].X);
-            if (($diffX -lt $targets[$i].Minimum) -and `
-                ($ball.Y -eq $targets[$i].Y))
-            {
-              $screen.Score++;
-              $ball.Visible = $false;
-              $targets[$i].Hit = $true;
-            }
-          }
-        }
 
       }
 
@@ -290,10 +273,6 @@ try
         # Move the torpedo downward
         $torpedo.Y++;
         $screen.Data[$torpedo.Y][$torpedo.X] = $torpedo.Icon;
-        if ($torpedo.Y -eq ($screen.Height - 1))
-        {
-          $torpedo.Visible = $false;
-        }
 
       }
       else
@@ -313,6 +292,19 @@ try
       # Add each target to the screen data
       for ($i = 0; $i -lt $count; $i++)
       {
+
+        # Check for a ball hit within the minimum distance
+        if ($ball.Visible)
+        {
+          $diffX = [Math]::Abs($ball.X - $targets[$i].X);
+          if (($diffX -lt $targets[$i].Minimum) -and `
+              ($ball.Y -eq $targets[$i].Y))
+          {
+            $screen.Score++;
+            $ball.Visible = $false;
+            $targets[$i].Hit = $true;
+          }
+        }
 
         # Toggle alternates between the two icons, unless hit
         $icon = $targets[$i].Icon;
@@ -366,6 +358,10 @@ try
       # Write the completed buffer to the console (Clear-Host flashes)
       Write-Host -Object $escape; # set position to 0,0 without clearing
       Write-Host -Object $buffer; # over-write screen data in one step
+
+      # Boundary check for misses
+      if ($ball.Y -eq 0) { $ball.Visible = $false; }
+      if ($torpedo.Y -eq ($screen.Height - 1)) { $torpedo.Visible = $false; }
 
       # End the game on a collision with a torpedo
       if (($cannon.X -eq $torpedo.X) -and `
