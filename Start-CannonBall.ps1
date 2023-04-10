@@ -225,20 +225,20 @@ try
         continue;
 
       }
-      elseif (($keypress -eq $right) -and `
-              ($cannon.X -lt ($screen.Width - 1)))
-      {
-
-        # Move the cannon right
-        $cannon.X++;
-
-      }
       elseif (($keypress -eq $left) -and `
               ($cannon.X -gt 0))
       {
 
         # Move the cannon left
         $cannon.X--;
+
+      }
+      elseif (($keypress -eq $right) -and `
+              ($cannon.X -lt ($screen.Width - 1)))
+      {
+
+        # Move the cannon right
+        $cannon.X++;
 
       }
       elseif (($keypress -eq $button) -and `
