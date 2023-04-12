@@ -88,6 +88,7 @@ The nay-sayers said that a game like this was impossible, but here it is.
 
 History:
 01.00 2023-Apr-09 Scott S. Initial release.
+01.01 2023-Apr-12 Scott S. Code optimizations.
 
 .LINK
 https://braintumor.org/
@@ -171,7 +172,7 @@ try
       $targets[$i].Step    = 1;
       $targets[$i].Splat   = "*";
       $targets[$i].Hit     = $false;
-      $targets[$i].Minimum = ($spacing - 1); # hit minimum distance
+      $targets[$i].Minimum = 2; # hit minimum distance
     }
 
     # Hide the cursor (otherwise, the cursor flashes)
@@ -283,7 +284,7 @@ try
         $chance = (Get-Random -Maximum 100);
         if ($chance -le $torpedo.Chance)
         {
-          $torpedo.X = $Cannon.X;
+          $torpedo.X = $cannon.X;
           $torpedo.Visible = $true;
         }
 
@@ -297,8 +298,8 @@ try
         if ($ball.Visible)
         {
           $diffX = [Math]::Abs($ball.X - $targets[$i].X);
-          if (($diffX -lt $targets[$i].Minimum) -and `
-              ($ball.Y -eq $targets[$i].Y))
+          if (($ball.Y -eq $targets[$i].Y) -and `
+              ($diffX -lt $targets[$i].Minimum))
           {
             $screen.Score++;
             $ball.Visible = $false;
@@ -329,14 +330,16 @@ try
 
           # Step value controls the target forward and backward movement
           $targets[$i].X = ($targets[$i].X + $targets[$i].Step);
-          if ($targets[$i].X -ge ($screen.Width - 1))
+          if (($targets[$i].X -ge ($screen.Width - 1)) -and `
+              ($targets[$i].Y -lt ($screen.Height - 1)))
           {
-            $targets[$i].Step = -1; # move left
+            $targets[$i].Step = -1; # reverse left
             $targets[$i].Y++;       # move down
           }
-          elseif ($targets[$i].X -le 0)
+          elseif (($targets[$i].X -le 0) -and `
+                  ($targets[$i].Y -lt ($screen.Height - 1)))
           {
-            $targets[$i].Step = 1;  # move right
+            $targets[$i].Step = 1;  # reverse right
             $targets[$i].Y++;       # move down
           }
 
@@ -364,8 +367,8 @@ try
       if ($torpedo.Y -eq ($screen.Height - 1)) { $torpedo.Visible = $false; }
 
       # End the game on a collision with a torpedo
-      if (($cannon.X -eq $torpedo.X) -and `
-          ($cannon.Y -eq $torpedo.Y))
+      if (($cannon.Y -eq $torpedo.Y) -and `
+          ($cannon.X -eq $torpedo.X))
       {
         $running = $false;
         continue;
@@ -375,8 +378,8 @@ try
       for ($i = 0; $i -lt $count; $i++)
       {
         $diffX = [Math]::Abs($cannon.X - $targets[$i].X);
-        if (($diffX -lt $targets[$i].Minimum) -and `
-            ($cannon.Y -eq $targets[$i].Y))
+        if (($cannon.Y -eq $targets[$i].Y) -and `
+            ($diffX -lt $targets[$i].Minimum))
         {
           $running = $false;
           continue;
@@ -393,7 +396,7 @@ try
     [Console]::CursorVisible = $true;
     while (($more.Length -ne 1) -or (-not ("YN").Contains($more)))
     {
-      $more = Read-Host -Prompt "`nGAME OVER - Play again? (Y/N)";
+      $more = Read-Host -Prompt "GAME OVER - Play again? (Y/N)";
       $more = $more.Trim().ToUpper();
     }
 
