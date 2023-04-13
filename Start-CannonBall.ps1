@@ -89,6 +89,7 @@ The nay-sayers said that a game like this was impossible, but here it is.
 History:
 01.00 2023-Apr-09 Scott S. Initial release.
 01.01 2023-Apr-12 Scott S. Code optimizations.
+01.02 2023-Apr-14 Scott S. More code optimizations.
 
 .LINK
 https://braintumor.org/
@@ -98,6 +99,7 @@ https://www.cancer.org/
 
 #>
 #Requires -Version 5.1
+
 param
 (
 
@@ -199,7 +201,7 @@ try
       # Clear the screen data (creates a hash table of character arrays)
       for ($row = 0; $row -lt $screen.Height; $row++)
       {
-        $screen.Data[$row] = (" " * $screen.Width).ToCharArray();
+        $screen.Data[$row] = (" " * $screen.Width).ToCharArray(); # spaces
       }
 
       # Read the next keypress
@@ -362,16 +364,15 @@ try
       Write-Host -Object $escape; # set position to 0,0 without clearing
       Write-Host -Object $buffer; # over-write screen data in one step
 
-      # Boundary check for misses
-      if ($ball.Y -eq 0) { $ball.Visible = $false; }
-      if ($torpedo.Y -eq ($screen.Height - 1)) { $torpedo.Visible = $false; }
-
       # End the game on a collision with a torpedo
-      if (($cannon.Y -eq $torpedo.Y) -and `
-          ($cannon.X -eq $torpedo.X))
+      if ($torpedo.Visible)
       {
-        $running = $false;
-        continue;
+        if (($cannon.Y -eq $torpedo.Y) -and `
+            ($cannon.X -eq $torpedo.X))
+        {
+          $running = $false;
+          continue;
+        }
       }
 
       # End the game on a collision with a target
@@ -385,6 +386,10 @@ try
           continue;
         }
       }
+
+      # Boundary check for misses
+      if ($ball.Y -eq 0) { $ball.Visible = $false; }
+      if ($torpedo.Y -eq ($screen.Height - 1)) { $torpedo.Visible = $false; }
 
       # Sleep to slow the running loop
       Start-Sleep -Milliseconds $screen.Sleep;
