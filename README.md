@@ -2,11 +2,11 @@
 ## Copyright (c) 2023 TigerPointe Software, LLC
 
 ## Description
-Implements a classic arcade-style "shooter" game in PowerShell.
+Implements a classic arcade-style "shooter" video game in PowerShell.
 
-The text animation blinks. If you are sensitive to light, do not play.
+The text animation blinks. If you are sensitive to light, please do not play.
 
-This script CANNOT be started from the IDE because keypress detection is used.
+This script CANNOT be started from the ISE because keypress detection is used.
 
 This script MUST be started from a real PowerShell console window.
 

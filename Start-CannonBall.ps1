@@ -4,11 +4,11 @@
 Starts a new Cannon Ball Arcade game in PowerShell.
 
 .DESCRIPTION
-Implements a classic arcade-style "shooter" game in PowerShell.
+Implements a classic arcade-style "shooter" video game in PowerShell.
 
-The text animation blinks. If you are sensitive to light, do not play.
+The text animation blinks. If you are sensitive to light, please do not play.
 
-This script CANNOT be started from the IDE because keypress detection is used.
+This script CANNOT be started from the ISE because keypress detection is used.
 
 This script MUST be started from a real PowerShell console window.
 
@@ -79,17 +79,17 @@ SOFTWARE.
 
 If you enjoy this software, please do something kind for free.
 
-The screen data is composed of a hash table of rows based on the height.
-Each row is composed of a character array of spaces based on the width.
-Game characters are added to replace the spaces using X and Y coordinates.
-On each loop, the console is reset, and every text row is over-written.
+The screen data is defined as a hash table of rows based on the height.
+Each row is defined as a character array of spaces based on the width.
+Game characters over-write the spaces using their X and Y coordinates.
+On each loop, the cursor position is reset, and the console is over-written.
 
 The nay-sayers said that a game like this was impossible, but here it is.
 
 History:
 01.00 2023-Apr-09 Scott S. Initial release.
 01.01 2023-Apr-12 Scott S. Code optimizations.
-01.02 2023-Apr-14 Scott S. More code optimizations.
+01.02 2023-Apr-15 Scott S. More code optimizations, cursor position.
 
 .LINK
 https://braintumor.org/
@@ -99,7 +99,6 @@ https://www.cancer.org/
 
 #>
 #Requires -Version 5.1
-
 param
 (
 
@@ -111,12 +110,14 @@ param
 try
 {
 
-  # Define the text escape sequence to reset the cursor position to 0,0
-  # (can be used as an alternative to Clear-Host on some systems)
-  $escape = "$([char]27)[H"; # code 27 = ESC
+  # Sanity check for the integrated scripting environment (ISE) and exit
+  if ($psISE -ne $null)
+  {
+    throw "This program can only be started from a console window.";
+  }
 
   # Define the control keys
-  # (script cannot be started from the IDE, keypress requires a true console)
+  # (script cannot be started from the ISE, keypress requires a true console)
   [ConsoleKey]$quit   = [ConsoleKey]::Q;          # quit
   [ConsoleKey]$pause  = [ConsoleKey]::P;          # pause
   [ConsoleKey]$left   = [ConsoleKey]::LeftArrow;  # move left
@@ -182,14 +183,14 @@ try
 
     # Pause briefly before starting the game
     Clear-Host;
-    Write-HOst -Object "`nCANNON BALL ARCADE";
-    Write-HOst -Object "`nControl Keys:`n";
-    Write-HOst -Object " Q            Quit";
-    Write-HOst -Object " P            Pause";
-    Write-HOst -Object " Left Arrow   Move Left";
-    Write-HOst -Object " Right Arrow  Move Right";
-    Write-HOst -Object " Down Arrow   Stop";
-    Write-HOst -Object " Space Bar    Launch Ball";
+    Write-Host -Object "`nCANNON BALL ARCADE";
+    Write-Host -Object "`nControl Keys:`n";
+    Write-Host -Object " Q            Quit";
+    Write-Host -Object " P            Pause";
+    Write-Host -Object " Left Arrow   Move Left";
+    Write-Host -Object " Right Arrow  Move Right";
+    Write-Host -Object " Down Arrow   Stop";
+    Write-Host -Object " Space Bar    Launch Ball";
     Write-Host -Object "`nPress ANY Key to Begin";
 
     # Loop while the game is running
@@ -311,7 +312,7 @@ try
 
         # Toggle alternates between the two icons, unless hit
         $icon = $targets[$i].Icon;
-        $targets[$i].Toggle = (-not $targets[$i].Toggle);
+        $targets[$i].Toggle = (-not $targets[$i].Toggle); # flip value
         if ($targets[$i].Toggle) { $icon = $targets[$i].IconAlt; }
         if ($targets[$i].Hit)    { $icon = $targets[$i].Splat;   }
         $screen.Data[$targets[$i].Y][$targets[$i].X] = $icon;
@@ -360,9 +361,9 @@ try
       }
       $buffer = $sb.ToString(); # double-buffering
 
-      # Write the completed buffer to the console (Clear-Host flashes)
-      Write-Host -Object $escape; # set position to 0,0 without clearing
-      Write-Host -Object $buffer; # over-write screen data in one step
+      # Write the completed buffer to the console (using Clear-Host flashes)
+      [Console]::SetCursorPosition(0, 0); # set cursor to 0,0 without clearing
+      Write-Host -Object $buffer;         # over-write screen data in one step
 
       # End the game on a collision with a torpedo
       if ($torpedo.Visible)
