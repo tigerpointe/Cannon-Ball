@@ -1,4 +1,4 @@
-<#
+﻿<#
 
 .SYNOPSIS
 Starts a new Cannon Ball Arcade game in PowerShell.
@@ -26,7 +26,7 @@ Control Keys:
   Down Arrow  : Stop the cannon movement
   Space Bar   : Launch the cannon ball at a target
 
-Every hit on a target scores one point.
+Every hit on a target scores points based on the distance.
 
 The game ends when the cannon collides with a target or torpedo.
 
@@ -89,7 +89,7 @@ The nay-sayers said that a game like this was impossible, but here it is.
 History:
 01.00 2023-Apr-09 Scott S. Initial release.
 01.01 2023-Apr-12 Scott S. Code optimizations.
-01.02 2023-Apr-15 Scott S. More code optimizations, cursor position.
+01.02 2023-Apr-15 Scott S. More code optimizations, cursor position, score.
 
 .LINK
 https://braintumor.org/
@@ -125,19 +125,20 @@ try
   [ConsoleKey]$stop   = [ConsoleKey]::DownArrow;  # stop
   [ConsoleKey]$button = [ConsoleKey]::Spacebar;   # launch ball
 
+  # Initialize the screen properties (done only once)
+  $screen        = @{};
+  $screen.Height = 16;
+  $screen.Width  = 25;
+  $screen.Hits   = 0;
+  $screen.Score  = 0;
+  $screen.Sleep  = $sleep; # milliseconds between loops
+  $screen.Data   = @{};    # empty hash table for screen data
+  $screen.Border = ("-" * $screen.Width);
+
   # Loop while more games are selected
   $more = "Y";
   while ($more -eq "Y")
   {
-
-    # Initialize the screen properties
-    $screen        = @{};
-    $screen.Height = 16;
-    $screen.Width  = 25;
-    $screen.Score  = 0;
-    $screen.Sleep  = $sleep; # milliseconds between loops
-    $screen.Data   = @{};    # empty hash table for screen data
-    $screen.Border = ("-" * $screen.Width);
 
     # Initialize the cannon properties
     $cannon      = @{};
@@ -169,7 +170,7 @@ try
       $targets[$i]         = @{};
       $targets[$i].Icon    = "\";
       $targets[$i].IconAlt = "/";
-      $targets[$i].Toggle  = $true;
+      $targets[$i].Toggle  = (($i % 2) -eq 0); # even or odd index
       $targets[$i].X       = ($i * $spacing);
       $targets[$i].Y       = 0;
       $targets[$i].Step    = 1;
@@ -304,7 +305,9 @@ try
           if (($ball.Y -eq $targets[$i].Y) -and `
               ($diffX -lt $targets[$i].Minimum))
           {
-            $screen.Score++;
+            $screen.Hits++;
+            $screen.Score = $screen.Score + `
+              (($screen.Height - $ball.Y) * 10);
             $ball.Visible = $false;
             $targets[$i].Hit = $true;
           }
@@ -351,9 +354,11 @@ try
       } # end for-target
 
       # Append all screen data into a buffer for faster rendering
-      $sb = [System.Text.StringBuilder]::new();
-      $score = "HITS:  $($screen.Score.ToString("N0"))";
+      $sb    = [System.Text.StringBuilder]::new();
+      $score = "SCORE:  $($screen.Score.ToString("N0"))";
+      $hits  = " HITS:  $($screen.Hits.ToString("N0"))";
       [void]$sb.AppendLine($score.PadRight($screen.Width));
+      [void]$sb.AppendLine($hits.PadRight($screen.Width));
       [void]$sb.AppendLine($screen.Border);
       for ($row = 0; $row -lt $screen.Height; $row++)
       {
@@ -402,7 +407,7 @@ try
     [Console]::CursorVisible = $true;
     while (($more.Length -ne 1) -or (-not ("YN").Contains($more)))
     {
-      $more = Read-Host -Prompt "GAME OVER - Play again? (Y/N)";
+      $more = Read-Host -Prompt "GAME OVER - Continue playing? (Y/N)";
       $more = $more.Trim().ToUpper();
     }
 
