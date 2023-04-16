@@ -28,7 +28,11 @@ Control Keys:
 
 Every hit on a target scores points based on the distance.
 
-The game ends when the cannon collides with a target or torpedo.
+A round ends when the cannon collides with a target or torpedo.
+
+Additional lives can be earned every 75 hits.
+
+The game ends when no more lives are available.
 
 Please consider giving to cancer research.
 
@@ -90,6 +94,7 @@ History:
 01.00 2023-Apr-09 Scott S. Initial release.
 01.01 2023-Apr-12 Scott S. Code optimizations.
 01.02 2023-Apr-15 Scott S. More code optimizations, cursor position, score.
+01.03 2023-Apr-16 Scott S. More code optimizations, lives.
 
 .LINK
 https://braintumor.org/
@@ -99,6 +104,7 @@ https://www.cancer.org/
 
 #>
 #Requires -Version 5.1
+
 param
 (
 
@@ -131,6 +137,9 @@ try
   $screen.Width  = 25;
   $screen.Hits   = 0;
   $screen.Score  = 0;
+  $screen.Lives  = -1;
+  $screen.Start  = 2;      # starting extra lives count
+  $screen.Replay = 75;     # hits needed for an additional life
   $screen.Sleep  = $sleep; # milliseconds between loops
   $screen.Data   = @{};    # empty hash table for screen data
   $screen.Border = ("-" * $screen.Width);
@@ -139,6 +148,14 @@ try
   $more = "Y";
   while ($more -eq "Y")
   {
+
+    # Reset the stats after all lives have been used
+    if ($screen.Lives -lt 0)
+    {
+      $screen.Hits  = 0;
+      $screen.Score = 0;
+      $screen.Lives = $screen.Start;
+    }
 
     # Initialize the cannon properties
     $cannon      = @{};
@@ -170,7 +187,7 @@ try
       $targets[$i]         = @{};
       $targets[$i].Icon    = "\";
       $targets[$i].IconAlt = "/";
-      $targets[$i].Toggle  = (($i % 2) -eq 0); # even or odd index
+      $targets[$i].Toggle  = (($i % 2) -eq 0); # even or odd index?
       $targets[$i].X       = ($i * $spacing);
       $targets[$i].Y       = 0;
       $targets[$i].Step    = 1;
@@ -184,15 +201,16 @@ try
 
     # Pause briefly before starting the game
     Clear-Host;
-    Write-Host -Object "`nCANNON BALL ARCADE";
-    Write-Host -Object "`nControl Keys:`n";
+    Write-Host -Object "`n   CANNON BALL ARCADE";
+    Write-Host -Object "`n     Control Keys:`n";
     Write-Host -Object " Q            Quit";
     Write-Host -Object " P            Pause";
     Write-Host -Object " Left Arrow   Move Left";
     Write-Host -Object " Right Arrow  Move Right";
     Write-Host -Object " Down Arrow   Stop";
     Write-Host -Object " Space Bar    Launch Ball";
-    Write-Host -Object "`nPress ANY Key to Begin";
+    Write-Host -Object "`n    GET READY TO PLAY!";
+    Write-Host -Object "`n  Press ANY Key to Begin";
 
     # Loop while the game is running
     $keypress = $pause;
@@ -305,11 +323,20 @@ try
           if (($ball.Y -eq $targets[$i].Y) -and `
               ($diffX -lt $targets[$i].Minimum))
           {
+
+            # Register the ball hit
             $screen.Hits++;
             $screen.Score = $screen.Score + `
               (($screen.Height - $ball.Y) * 10);
             $ball.Visible = $false;
             $targets[$i].Hit = $true;
+
+            # Check for additional lives earned (uses modulus)
+            if (($screen.Hits % $screen.Replay) -eq 0)
+            {
+              $screen.Lives++;
+            }
+
           }
         }
 
@@ -354,11 +381,13 @@ try
       } # end for-target
 
       # Append all screen data into a buffer for faster rendering
-      $sb    = [System.Text.StringBuilder]::new();
       $score = "SCORE:  $($screen.Score.ToString("N0"))";
       $hits  = " HITS:  $($screen.Hits.ToString("N0"))";
+      $lives = "LIVES:  $($screen.Lives.ToString("N0"))";
+      $sb    = [System.Text.StringBuilder]::new();
       [void]$sb.AppendLine($score.PadRight($screen.Width));
       [void]$sb.AppendLine($hits.PadRight($screen.Width));
+      [void]$sb.AppendLine($lives.PadRight($screen.Width));
       [void]$sb.AppendLine($screen.Border);
       for ($row = 0; $row -lt $screen.Height; $row++)
       {
@@ -393,7 +422,7 @@ try
         }
       }
 
-      # Boundary check for misses
+      # Boundary checks for misses
       if ($ball.Y -eq 0) { $ball.Visible = $false; }
       if ($torpedo.Y -eq ($screen.Height - 1)) { $torpedo.Visible = $false; }
 
@@ -403,11 +432,17 @@ try
     } # end while-running
 
     # Prompt for another game
-    $more = "";
     [Console]::CursorVisible = $true;
+    $prompt = "Continue playing?";
+    $screen.Lives--;
+    if ($screen.Lives -lt 0)
+    {
+      $prompt = "* * * G A M E   O V E R * * *`n  Start a new game?";
+    }
+    $more = "";
     while (($more.Length -ne 1) -or (-not ("YN").Contains($more)))
     {
-      $more = Read-Host -Prompt "GAME OVER - Continue playing? (Y/N)";
+      $more = Read-Host -Prompt "$prompt (Y/N)";
       $more = $more.Trim().ToUpper();
     }
 
