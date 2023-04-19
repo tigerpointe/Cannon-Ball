@@ -30,7 +30,7 @@ Every hit on a target scores points based on the distance.
 
 A round ends when the cannon collides with a target or torpedo.
 
-Additional lives can be earned every 75 hits.
+Additional lives can be earned every 50 hits.
 
 The game ends when no more lives are available.
 
@@ -95,6 +95,7 @@ History:
 01.01 2023-Apr-12 Scott S. Code optimizations.
 01.02 2023-Apr-15 Scott S. More code optimizations, cursor position, score.
 01.03 2023-Apr-16 Scott S. More code optimizations, lives.
+01.04 2023-Apr-19 Scott S. Difficulty increases over time.
 
 .LINK
 https://braintumor.org/
@@ -103,6 +104,7 @@ https://braintumor.org/
 https://www.cancer.org/
 
 #>
+
 #Requires -Version 5.1
 
 param
@@ -132,17 +134,19 @@ try
   [ConsoleKey]$button = [ConsoleKey]::Spacebar;   # launch ball
 
   # Initialize the screen properties (done only once)
-  $screen        = @{};
-  $screen.Height = 16;
-  $screen.Width  = 25;
-  $screen.Hits   = 0;
-  $screen.Score  = 0;
-  $screen.Lives  = -1;
-  $screen.Start  = 2;      # starting extra lives count
-  $screen.Replay = 75;     # hits needed for an additional life
-  $screen.Sleep  = $sleep; # milliseconds between loops
-  $screen.Data   = @{};    # empty hash table for screen data
-  $screen.Border = ("-" * $screen.Width);
+  $screen          = @{};
+  $screen.Height   = 16;
+  $screen.Width    = 25;
+  $screen.Hits     = 0;
+  $screen.Score    = 0;
+  $screen.Lives    = -1;
+  $screen.Start    = 2;      # starting extra lives count
+  $screen.Replay   = 50;     # hits needed for an additional life
+  $screen.Sleep    = $sleep; # milliseconds between loops
+  $screen.SleepDec = 5;      # sleep difficulty decrement
+  $screen.SleepMin = 45;     # sleep difficulty minimum value
+  $screen.Data     = @{};    # empty hash table for screen data
+  $screen.Border   = ("-" * $screen.Width);
 
   # Loop while more games are selected
   $more = "Y";
@@ -155,6 +159,7 @@ try
       $screen.Hits  = 0;
       $screen.Score = 0;
       $screen.Lives = $screen.Start;
+      $screen.Sleep = $sleep;
     }
 
     # Initialize the cannon properties
@@ -334,7 +339,16 @@ try
             # Check for additional lives earned (uses modulus)
             if (($screen.Hits % $screen.Replay) -eq 0)
             {
+
+              # Add an additional life
               $screen.Lives++;
+
+              # Increase the difficulty level (faster play)
+              if ($screen.Sleep -gt $screen.SleepMin)
+              {
+                $screen.Sleep = ($screen.Sleep - $screen.SleepDec);
+              }
+
             }
 
           }
