@@ -96,6 +96,7 @@ History:
 01.02 2023-Apr-15 Scott S. More code optimizations, cursor position, score.
 01.03 2023-Apr-16 Scott S. More code optimizations, lives.
 01.04 2023-Apr-19 Scott S. Difficulty increases over time.
+01.05 2023-Apr-25 Scott S. More code optimizations, undefined keypresses.
 
 .LINK
 https://braintumor.org/
@@ -104,7 +105,6 @@ https://braintumor.org/
 https://www.cancer.org/
 
 #>
-
 #Requires -Version 5.1
 
 param
@@ -171,15 +171,15 @@ try
     # Initialize the ball properties
     $ball         = @{};
     $ball.Icon    = ".";
-    $ball.X       = 0;
-    $ball.Y       = 0;
+    $ball.X       = -1;
+    $ball.Y       = -1;
     $ball.Visible = $false;
 
     # Initialize the torpedo properties
     $torpedo         = @{};
     $torpedo.Icon    = "|";
-    $torpedo.X       = 0;
-    $torpedo.Y       = 0;
+    $torpedo.X       = -1;
+    $torpedo.Y       = -1;
     $torpedo.Chance  = 3; # percentage chance of appearance
     $torpedo.Visible = $false;
 
@@ -222,12 +222,6 @@ try
     $running  = $true;
     while ($running)
     {
-
-      # Clear the screen data (creates a hash table of character arrays)
-      for ($row = 0; $row -lt $screen.Height; $row++)
-      {
-        $screen.Data[$row] = (" " * $screen.Width).ToCharArray(); # spaces
-      }
 
       # Read the next keypress
       if ([Console]::KeyAvailable)         # non-blocking
@@ -280,6 +274,13 @@ try
         $keypress     = $stop;
 
       }
+      else { $keypress = $stop; } # All others
+
+      # Clear the screen data (creates a hash table of character arrays)
+      for ($row = 0; $row -lt $screen.Height; $row++)
+      {
+        $screen.Data[$row] = (" " * $screen.Width).ToCharArray(); # spaces
+      }
 
       # Add the cannon to the screen data
       $screen.Data[$cannon.Y][$cannon.X] = $cannon.Icon;
@@ -307,7 +308,7 @@ try
       {
 
         # Otherwise, randomly initialize a new torpedo
-        $torpedo.Y = 0;
+        $torpedo.Y = -1;
         $chance = (Get-Random -Maximum 100);
         if ($chance -le $torpedo.Chance)
         {
