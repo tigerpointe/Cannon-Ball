@@ -97,6 +97,7 @@ History:
 01.03 2023-Apr-16 Scott S. More code optimizations, lives.
 01.04 2023-Apr-19 Scott S. Difficulty increases over time.
 01.05 2023-Apr-25 Scott S. More code optimizations, undefined keypresses.
+01.06 2023-Apr-30 Scott S. More code optimizations, borders, error handler.
 
 .LINK
 https://braintumor.org/
@@ -134,19 +135,22 @@ try
   [ConsoleKey]$button = [ConsoleKey]::Spacebar;   # launch ball
 
   # Initialize the screen properties (done only once)
-  $screen          = @{};
-  $screen.Height   = 16;
-  $screen.Width    = 25;
-  $screen.Hits     = 0;
-  $screen.Score    = 0;
-  $screen.Lives    = -1;
-  $screen.Start    = 2;      # starting extra lives count
-  $screen.Replay   = 50;     # hits needed for an additional life
-  $screen.Sleep    = $sleep; # milliseconds between loops
-  $screen.SleepDec = 5;      # sleep difficulty decrement
-  $screen.SleepMin = 45;     # sleep difficulty minimum value
-  $screen.Data     = @{};    # empty hash table for screen data
-  $screen.Border   = ("-" * $screen.Width);
+  $screen           = @{};
+  $screen.Height    = 16;
+  $screen.Width     = 25;
+  $screen.Hits      = 0;
+  $screen.Score     = 0;
+  $screen.Lives     = -1;
+  $screen.Start     = 2;      # starting extra lives count
+  $screen.Replay    = 50;     # hits needed for an additional life
+  $screen.Sleep     = $sleep; # milliseconds between loops
+  $screen.SleepDec  = 5;      # sleep difficulty decrement
+  $screen.SleepMin  = 45;     # sleep difficulty minimum value
+  $screen.Data      = @{};    # empty hash table for screen data
+  $screen.Icon      = "-";
+  $screen.IconLeft  = ".";
+  $screen.IconRight = ".";
+  $screen.Border    = ($screen.Icon * $screen.Width);
 
   # Loop while more games are selected
   $more = "Y";
@@ -281,6 +285,12 @@ try
       {
         $screen.Data[$row] = (" " * $screen.Width).ToCharArray(); # spaces
       }
+
+      # Add the lower boundary icon markers to the screen data
+      $screen.Data[($screen.Height - 1)][0] = `
+        $screen.IconLeft;
+      $screen.Data[($screen.Height - 1)][($screen.Width - 1)] = `
+        $screen.IconRight;
 
       # Add the cannon to the screen data
       $screen.Data[$cannon.Y][$cannon.X] = $cannon.Icon;
@@ -466,5 +476,5 @@ try
 }
 catch
 {
-  Write-Error $_;
+  Write-Error -Message $_.Exception.Message;
 }
