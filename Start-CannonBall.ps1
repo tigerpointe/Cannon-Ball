@@ -112,7 +112,7 @@ param
 (
 
   # Defines a default sleep value for the pause between each screen refresh
-  [string]$sleep = 75
+  [int]$sleep = 75
 
 )
 
